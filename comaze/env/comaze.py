@@ -239,6 +239,7 @@ class TwoPlayersCoMazeGym(gym.Env):
     """
     Resets simulation and generates a new game.
     """
+    self.move_it = 0
     self._agent_ids = [None, None]
     self._action_spaces = [None, None]
     self._game_id = requests.post(
@@ -304,6 +305,7 @@ class TwoPlayersCoMazeGym(gym.Env):
     # still the current player's turn, so we 
     # make it "SKIP".
     try:
+      self.move_it +=1
       self.game = requests.post(request_url).json()
     except Exception as e:
       if self.verbose:  
@@ -314,7 +316,10 @@ class TwoPlayersCoMazeGym(gym.Env):
       skip_request_url += "?playerId=" + self._agent_ids[self._time_index%2] #self.player_id
       skip_request_url += "&action=SKIP"
       self.game = requests.post(skip_request_url).json()
+      self.move_it +=1
     
+    if self.verbose:  print(f"Move : {self.move_it}")
+
     resulting_game_state = self.game["state"]
     if self.verbose:  print('---')
     

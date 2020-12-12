@@ -2,3 +2,4 @@ from .rl_comaze import RLCoMaze
 from .abstract_on_policy_rl_agent import AbstractOnPolicyRLAgent
 from .simple_on_policy_rl_agent import SimpleOnPolicyRLAgent 
 from .simple_communicating_on_policy_rl_agent import SimpleCommunicatingOnPolicyRLAgent 
+from .simple_communicating_secret_rule_on_policy_rl_agent import SimpleCommunicatingSecretRuleOnPolicyRLAgent
