@@ -36,8 +36,8 @@ class RuleBasedAgent(AbstractAgent):
     ]
     nearest_goal = goal_dists.index(min(goal_dists)) 
 
-    print(f'Nearest goal is {observation["unreachedGoals"][nearest_goal]}')
-    print(f'Nearest goal diff {goal_diffs[nearest_goal]}')
+    #print(f'Nearest goal is {observation["unreachedGoals"][nearest_goal]}')
+    #print(f'Nearest goal diff {goal_diffs[nearest_goal]}')
 
     move_x, move_y = goal_diffs[nearest_goal]
 

@@ -64,7 +64,18 @@ class AbstractOnPolicyRLAgent(AbstractAgent, nn.Module):
     """
     self.episode_log_prob_actions = []
     self.episode_rewards = []
+    self.current_player = False
   
+  def select_move(self, observation: Observation) -> Action:
+    """
+    Returns agent's move in server-friendly format, 
+    given a server-friendly-formatted `observation`.
+    Use the extract_exp_fn and format_move_fn to accomodate the agent.
+    """
+    self.current_player = True
+    formatted_move = super(AbstractOnPolicyRLAgent, self).select_move(observation=observation)
+    return formatted_move
+
   def _calculate_returns(self, rewards, discount_factor, normalize=True):
     returns = []
     R = 0
@@ -81,35 +92,51 @@ class AbstractOnPolicyRLAgent(AbstractAgent, nn.Module):
     return returns  
 
   def init_rl_algo(self):
+    #self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
     self.optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate)
 
   def optimize(self):
     log_prob_actions = torch.cat(self.episode_log_prob_actions)
     with torch.no_grad():
       returns = self._calculate_returns(self.episode_rewards, self.discount_factor).detach()
-    loss = - (returns.to(log_prob_actions.device) * log_prob_actions).sum()
+    self.loss = - (returns.to(log_prob_actions.device) * log_prob_actions).sum()
 
     self.optimizer.zero_grad()
-    loss.backward(retain_graph=True)
+    self.loss.backward()#retain_graph=True)
     self.optimizer.step()
     
-    print(f'Loss {loss} :: EP reward {sum(self.episode_rewards)}')
+    print(f'Loss {self.loss} :: EP reward {sum(self.episode_rewards)}')
 
     # reset:
     self._episode_reset()
+
+    return self.loss 
     
   def update(self, last_action, new_observation, reward, done) -> None:
     """
     Updates the agent in an on-policy fashion.
     Callback made after env.step().
     """
+    loss = None
     if len(self.bookkeeping_dict.keys()):
-      log_prob_action = self.bookkeeping_dict["action_dict"].get("log_prob_action", None)
-      if log_prob_action is None:
-        raise Exception("You must provide an entry 'log_prob_action' in the output dict of select_action.")
-      self.episode_log_prob_actions.append(log_prob_action)
-      self.episode_rewards.append(reward)
+      # Only accounts for the log prob action when
+      # an actual action has been taken.
+      # Otherwise update the reward to account for the other player.
+      if self.current_player:
+        self.current_player = False
+        log_prob_action = self.bookkeeping_dict["action_dict"].get("log_prob_action", None)
+        
+        if log_prob_action is None:
+          raise Exception("You must provide an entry 'log_prob_action' in the output dict of select_action.")
+        
+        self.episode_log_prob_actions.append(log_prob_action)
+        self.episode_rewards.append(reward)
+      else:
+        if len(self.episode_rewards):
+          self.episode_rewards[-1] += reward 
 
       if done:
-        self.optimize()
+        loss = self.optimize()
+
+    return loss
       

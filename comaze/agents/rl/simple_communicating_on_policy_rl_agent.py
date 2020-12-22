@@ -75,7 +75,7 @@ class SimpleCommunicatingOnPolicyRLAgent(AbstractOnPolicyRLAgent):
     The resulting form should be:
     return "prefix-teamID"
     """
-    return "simpleCommOnPolicyRLagent-testTeamID"
+    return "simpleCommOnPolicyRLagent-SGD-testTeamID"
   
   def build_agent(self):
     self.embed_pov_size = 256

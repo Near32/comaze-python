@@ -4,10 +4,10 @@ import pandas as pd
 
 from functools import partial
 from tqdm import tqdm 
-from tensorboardX import SummaryWriter 
+from tensorboardX import GlobalSummaryWriter 
 
 from comaze.env import TwoPlayersCoMazeGym
-from comaze.agents import AbstractAgent, SimpleOnPolicyRLAgent, SimpleCommunicatingOnPolicyRLAgent
+from comaze.agents import AbstractAgent, RuleBasedAgent, SimpleCommunicatingOnPolicyRLAgent
 
 
 def two_players_environment_loop(
@@ -15,6 +15,7 @@ def two_players_environment_loop(
     agent2: AbstractAgent,
     environment,
     max_episode_length,
+    logger,
 ):
   """
   Loop runner for the environment.
@@ -45,7 +46,9 @@ def two_players_environment_loop(
       reward += -1
 
     for agent in [agent1, agent2]:
-      agent.update(move, next_state, reward, done)
+      loss = agent.update(move, next_state, reward, done)
+      if loss is not None:
+        logger.add_scalar("Training/Loss", loss.item())
 
     # Book-keeping.
     trajectory.append((t, state, move, reward, next_state, done, info))
@@ -53,12 +56,15 @@ def two_players_environment_loop(
     cum_reward += reward
     t = t + 1
     state = next_state
-  
+    
+    #logger.flush()
 
   # Dump logs.
+  """
   pd.DataFrame(trajectory).to_csv("{}-{}.csv".format(
       agent1.agent_id, agent2.agent_id)
   )
+  """
 
   return cum_reward, trajectory
 
@@ -67,13 +73,14 @@ def test_training_simple_communicating_on_policy_rl_agent():
   sparse_reward = False
 
   agent1 = SimpleCommunicatingOnPolicyRLAgent( 
-    learning_rate=1e-4,
+    learning_rate=3e-4,
     discount_factor=0.99,
     num_actions=4*(10+1)+1,
     pov_shape=[7,7,12],
     use_cuda=use_cuda,
   )
 
+  """
   agent2 = SimpleOnPolicyRLAgent( 
     learning_rate=1e-4,
     discount_factor=0.99,
@@ -81,11 +88,24 @@ def test_training_simple_communicating_on_policy_rl_agent():
     pov_shape=[7,7,12],
     use_cuda=use_cuda,
   )
+  """
 
-  logging_path = './test_communicating_training.log'
-  logger = SummaryWriter(logging_path)
+  agent2 = RuleBasedAgent()
 
-  max_episode_length = 50
+  """
+  agent2 = SimpleCommunicatingOnPolicyRLAgent( 
+    learning_rate=1e-3,
+    discount_factor=0.99,
+    num_actions=4*(10+1)+1,
+    pov_shape=[7,7,12],
+    use_cuda=use_cuda,
+  )
+  """
+
+  logging_path = './debug/VSrulebased_large_sgd_lr3m4_test_communicating_training.log'
+  logger = GlobalSummaryWriter(logging_path)
+
+  max_episode_length = 100
   nbr_training_episodes = 1000
   verbose = False 
 
@@ -108,14 +128,16 @@ def test_training_simple_communicating_on_policy_rl_agent():
         agent2=agent2,
         environment=environment,
         max_episode_length=max_episode_length,
+        logger=logger
     )
 
-    agent1.save()
-    agent2.save()
-
-    logger.add_scalar("Training/EpisodeCumulativeReward", episode_cum_reward, episode)
-    logger.add_scalar("Training/NbrSteps", len(trajectory), episode)
-    logger.flush()
+    
+    logger.add_scalar("Training/EpisodeCumulativeReward", episode_cum_reward)#, episode)
+    logger.add_scalar("Training/NbrSteps", len(trajectory))#, episode)
+    #logger.flush()
+  
+  agent1.save()
+  agent2.save()
 
 if __name__ == "__main__":
   test_training_simple_communicating_on_policy_rl_agent()

@@ -79,7 +79,7 @@ class SimpleCommunicatingSecretRuleOnPolicyRLAgent(AbstractOnPolicyRLAgent):
     return "simpleCommOnPolicyRLagent-testTeamID"
   
   def build_agent(self):
-    self.embed_pov_size = 256
+    self.embed_pov_size = 64
     self.embed_pov = nn.Sequential(
       nn.Conv2d(in_channels=self.pov_shape[-1], out_channels=32, kernel_size=3, stride=1, padding=1),
       nn.ReLU(),
@@ -88,17 +88,17 @@ class SimpleCommunicatingSecretRuleOnPolicyRLAgent(AbstractOnPolicyRLAgent):
       nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, stride=1, padding=1),
       nn.ReLU(),
       nn.Flatten(),
-      nn.Linear(512, self.embed_pov_size),
+      nn.Linear(256, self.embed_pov_size),
       nn.ReLU(),
     )
     
-    self.embed_message_size = 64
+    self.embed_message_size = 16
     self.embed_previous_message = nn.Embedding(
       num_embeddings=self.vocab_size,
       embedding_dim=self.embed_message_size,
     )
 
-    self.embed_action_size = 128
+    self.embed_action_size = 32
     self.embed_action_space = nn.Linear(self.num_actions, self.embed_action_size)
     
     self.embed_secret_rule_size = 16

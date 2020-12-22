@@ -27,9 +27,9 @@ setup(
     install_requires=[
       'tqdm',
       'gym',
-      'tensorboardx',
-      'torch',
-      'torchvision'
+      #'tensorboardx',
+      #'torch',
+      #'torchvision'
     ],
 
     python_requires=">=3.6",

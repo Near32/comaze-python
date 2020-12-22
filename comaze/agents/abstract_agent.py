@@ -61,12 +61,13 @@ class AbstractAgent(abc.ABC):
   def save(self):
     try:
       save_path = f"./{self.agent_id}.player"
-      pickle.dump(self, open(save_path, 'wb'))
+      #pickle.dump(self, open(save_path, 'wb'))
+      torch.save(self, save_path)
       print(f"Agent saved successfully at {save_path} .")
       return True
     except Exception as e:
       print(e)
-      print("Agent was NOT save, please investigate:")
+      print("Agent was NOT saved, please investigate:")
       import ipdb; ipdb.set_trace()
 
     return False
