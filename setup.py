@@ -27,6 +27,7 @@ setup(
     install_requires=[
       'tqdm',
       'gym',
+      'gym-minigrid',
       #'tensorboardx',
       #'torch',
       #'torchvision'
